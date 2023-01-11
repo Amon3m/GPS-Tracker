@@ -4,6 +4,7 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.IntentSender
 import android.content.pm.PackageManager
+import android.location.Location
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Looper
@@ -14,11 +15,19 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.*
+import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.OnMapReadyCallback
+import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.Marker
+import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.gms.tasks.Task
 import com.m3.islami2.base.BaseActivity
 
-class MainActivity : BaseActivity() {
+class MainActivity : BaseActivity() , OnMapReadyCallback {
     private lateinit var fusedLocationClient: FusedLocationProviderClient
+    lateinit var map: SupportMapFragment
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -33,6 +42,8 @@ class MainActivity : BaseActivity() {
             requestLocationPermissionFromUser()
 
         }
+        map=supportFragmentManager.findFragmentById(R.id.map) as SupportMapFragment
+        map.getMapAsync(this)
 
 
     }
@@ -141,8 +152,9 @@ class MainActivity : BaseActivity() {
             result ?: return
 
             for (location in result.locations) {
-                // Update UI with location data
-                // ...
+
+                drawUserLocation(location)
+
                 Log.e("new location", "" + location.longitude + " " + location.longitude)
             }
         }
@@ -158,6 +170,21 @@ class MainActivity : BaseActivity() {
         fusedLocationClient.requestLocationUpdates(locationRequest,
             locationCallback,//^^
             Looper.getMainLooper())
+    }
+
+    var googleMap: GoogleMap?=null
+    override fun onMapReady(googleMap: GoogleMap) {
+        this.googleMap=googleMap
+    }
+    var userMarker: Marker?=null
+    fun drawUserLocation(location: Location){
+        val markOption= MarkerOptions().position(LatLng( location.latitude,location.longitude))
+        if (userMarker==null){
+            userMarker=googleMap?.addMarker(markOption)
+        }
+        else{userMarker?.position= LatLng( location.latitude,location.longitude)
+        }
+        googleMap?.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(location.latitude,location.longitude),19f))
     }
 
 }
